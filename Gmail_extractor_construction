@@ -1,0 +1,158 @@
+import sys
+import imaplib
+import getpass
+import email
+from email.header import decode_header
+import datetime
+import email.message 
+import csv
+import pandas as pd
+from openpyxl import load_workbook
+from unicodedata import normalize
+
+EMAIL_ACCOUNT = "xxxxxx"
+EMAIL_PASS= "xxxxxx"
+EMAIL_FOLDER = "Inbox"
+HOST="imap.gmail.com"
+# Use 'INBOX' to read inbox.  Note that whatever folder is specified, 
+# after successfully running this script all emails in that folder 
+# will be marked as read.
+ #https://myaccount.google.com/lesssecureapps?pli=1&rapt=AEjHL4PBsVOqp36_CwOLtN_iJMPjBWSe7nmfFZcj5uESkCIBfbtanMiVC6akrWzdBqSMdcjNd2fmw9AzrGlfJ2E2qu7YScLtAQ l'accès est turn on ??# checking new email in INBOX
+ #https://www.thepythoncode.com/article/reading-emails-in-python
+
+
+mail = imaplib.IMAP4_SSL(HOST) #connection au service Google 
+
+(retcode, capabilities) = mail.login(EMAIL_ACCOUNT,EMAIL_PASS) # connection with login & password 
+mail.list()
+mail.select(EMAIL_FOLDER) # choix du fichier email 
+
+df = pd.DataFrame(columns = ['ReceiveDate', 'Subject', 'Sender', "Body"])
+
+n=0 # boucle à 0 
+
+(retcode, messages) = mail.search(None, '(UNSEEN)')
+if retcode == 'OK':                                     # si il est considéré comme non lu 
+    for num in messages[0].split() :                    # alors emuneration de message[value 0].spération // on sépare les messages 
+        print ('Processing ')                           # indications de fonctionement python
+        n=n+1
+        typ, data = mail.fetch(num,'(RFC822)')          # fetch the email message by ID
+        for response in data:
+            if isinstance(response, tuple):
+                # parse a bytes email into a message object
+                msg = email.message_from_bytes(response[1])
+                # decode the email subject
+                subject, encoding = decode_header(msg["Subject"])[0]
+                if isinstance(subject, bytes):
+                    # if it's a bytes, decode to str
+                    subject = subject.decode(encoding)
+                # decode email sender
+                From, encoding = decode_header(msg.get("From"))[0]
+                if isinstance(From, bytes):
+                    From = From.decode(encoding)
+                Date, encoding = decode_header(msg.get("Date"))[0]
+                if isinstance(From, bytes):
+                    Date = Date.decode(encoding)                
+                # if the email message is multipart
+                if msg.is_multipart():
+                    # iterate over email parts
+                    for part in msg.walk():
+                        # extract content type of email
+                        content_type = part.get_content_type()
+                        content_disposition = str(part.get("Content-Disposition"))
+                        try:
+                            # get the email body
+                            body = part.get_payload(decode=True).decode()
+                        except:
+                            pass
+                        if content_type == "text/plain" and "attachment" not in content_disposition:
+                            body =part.get_payload(decode=True)
+
+                        # print text/plain emails and skip attachments
+        df.loc[n,"ReceiveDate"] = (Date)
+        df.loc[n,"Subject"] = (subject)
+        df.loc[n,"Sender"] = (From)
+        #df.loc[count,"Importance"] = (messageDetails.Importance)
+        df.loc[n,"Body"] = (body)
+        # print(final_list)
+
+
+print(df.head(5))
+
+# book = load_workbook("C:/Users/henry/Desktop/to be set in proper folder/OK.xlsx")
+# writer = pd.ExcelWriter('C:/Users/henry/Desktop/to be set in proper folder/OK.xlsx', engine='openpyxl', mode="a")
+# writer.book = book
+# writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+
+# df.to_excel(writer, startrow=writer.sheets['Sheet1'].max_row, index = False,header= False)
+
+# writer.save()
+
+# print('Date:', Date)
+# print("From:", From)
+# print("Subject:", subject)
+    # elif retcode != 'OK': 
+    #     reload()
+
+    # else:
+    #     print('error')
+                
+        # close the connection and logout
+mail.close()
+mail.logout()   
+            
+            
+    
+        
+################################# GOOD CODE #####################################################################
+
+# EMAIL_ACCOUNT = "xxxxx"
+# EMAIL_PASS= "xxxxx"
+# EMAIL_FOLDER = "Inbox"
+# HOST="imap.gmail.com"
+# # Use 'INBOX' to read inbox.  Note that whatever folder is specified, 
+# # after successfully running this script all emails in that folder 
+# # will be marked as read.
+#  #https://myaccount.google.com/lesssecureapps?pli=1&rapt=AEjHL4PBsVOqp36_CwOLtN_iJMPjBWSe7nmfFZcj5uESkCIBfbtanMiVC6akrWzdBqSMdcjNd2fmw9AzrGlfJ2E2qu7YScLtAQ l'accès est turn on ??# checking new email in INBOX
+
+# mail = imaplib.IMAP4_SSL(HOST) #connection au service Google 
+
+# (retcode, capabilities) = mail.login(EMAIL_ACCOUNT,EMAIL_PASS) # connection with login & password 
+# mail.list()
+# mail.select(EMAIL_FOLDER) # choix du fichier email 
+
+
+
+# n=0
+# (retcode, messages) = mail.search(None, '(UNSEEN)')
+# if retcode == 'OK':
+
+#    for num in messages[0].split() :
+#       print ('Processing ')
+#       n=n+1
+#       typ, data = mail.fetch(num,'(RFC822)')
+#       for response_part in data:
+#          if isinstance(response_part, tuple):
+#              original = email.message_from_bytes(response_part[1])
+
+#             # print (original['From'])
+#             # print (original['Subject'])
+#              raw_email = data[0][1]
+#              raw_email_string = raw_email.decode('utf-8')
+#              email_message = email.message_from_string(raw_email_string)
+#              for part in email_message.walk():
+#                         if (part.get_content_type() == "text/plain"): # ignore attachments/html
+#                               body = part.get_payload(decode=True)
+#                               save_string = str(r"C:\Users\devda\Desktop\Internship\Dumpemail_" + str('richboy') + ".txt" )
+#                               myfile = open(save_string, 'a')
+#                               myfile.write(original['From']+'\n')
+#                               myfile.write(original['Subject']+'\n')            
+#                               myfile.write(body.decode('utf-8'))
+#                               myfile.write('**********\n')
+#                               myfile.close()
+#                         else:
+#                               continue
+
+#              typ, data = mail.store(num,'+FLAGS','\\Seen')
+
+# print (n)
