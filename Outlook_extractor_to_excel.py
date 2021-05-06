@@ -36,8 +36,8 @@ def outlook_email():
     print('loading.....')
     print(df.head(5))
 
-    book = load_workbook("C:/Users/henry/Desktop/to be set in proper folder/tetx1.xlsx")
-    writer = pd.ExcelWriter('C:/Users/henry/Desktop/to be set in proper folder/tetx1.xlsx', engine='openpyxl', mode="a")
+    book = load_workbook("xxxxx.xlsx")
+    writer = pd.ExcelWriter('xxxxxx.xlsx', engine='openpyxl', mode="a")
     writer.book = book
     writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
 
